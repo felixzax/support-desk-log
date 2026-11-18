@@ -105,7 +105,7 @@ class Settings(QDialog):
         selected, _ = QFileDialog.getOpenFileName(self, "Restore from backup",
                                                    str(self.archive.directory), "JSON backups (*.json)")
         if selected and QMessageBox.question(
-            self, "Replace local data", "Replace local tickets and settings with this backup? A copy of the current data will be saved first.",
+            self, "Replace local data", "Restore this backup? It replaces the data it contains, including hardware and manuals if present. A copy of the current data will be saved first.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No,
         ) == QMessageBox.StandardButton.Yes:
             def restore_archive() -> None:

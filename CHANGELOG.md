@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.0
+
+- Added a searchable hardware catalog with device type, make, model, power cable or adapter, and ink or toner.
+- Added local manual attachments and included hardware and manuals in JSON backups.
+
 ## v1.0.0
 
 - Added the offline Windows ticket browser and editor, requester autocomplete, search, and priority filters.

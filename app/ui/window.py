@@ -8,12 +8,14 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent, QColor, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QMessageBox, QPushButton, QScrollArea, QSplitter, QTabBar,
+    QMainWindow, QMessageBox, QPushButton, QScrollArea, QSplitter, QTabBar, QTabWidget,
     QToolButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QInputDialog,
 )
 
+from app.data.hardware import HardwareRepository
 from app.models.ticket import CURRENT, TRANSITIONS, Ticket
 from app.services.backup import Archive
+from app.services.hardware import Catalog
 from app.services.search import browse, overview
 from app.services.tickets import Tickets
 from app.ui.forms import PASSWORD_NOTE, TicketEditor, priority_box
@@ -58,8 +60,14 @@ class MainWindow(QMainWindow):
         self.resize(1320, 820)
         self.setMinimumSize(890, 530)
 
+        from app.ui.hardware import HardwarePage
+
+        self.sections = QTabWidget()
+        self.setCentralWidget(self.sections)
         central = QWidget()
-        self.setCentralWidget(central)
+        self.sections.addTab(central, "Tickets")
+        self.hardware = HardwarePage(Catalog(HardwareRepository(service.repo)))
+        self.sections.addTab(self.hardware, "Hardware")
         layout = QVBoxLayout(central)
         layout.setContentsMargins(16, 12, 16, 12)
         layout.setSpacing(8)
@@ -130,7 +138,7 @@ class MainWindow(QMainWindow):
             signal.connect(lambda *_: self.refresh())
         self.list.itemSelectionChanged.connect(self.show_detail)
         QShortcut(QKeySequence("Ctrl+N"), self, activated=self.edit)
-        QShortcut(QKeySequence("Ctrl+F"), self, activated=self.search.setFocus)
+        QShortcut(QKeySequence("Ctrl+F"), self, activated=self.focus_search)
         apply_theme(QApplication.instance(), self.dark)
         self.refresh()
 
@@ -280,8 +288,14 @@ class MainWindow(QMainWindow):
                 log.addLayout(row)
         self.section(layout, "Progress log", log)
 
+    def focus_search(self) -> None:
+        """Focus search in the current section."""
+        search = self.hardware.query if self.sections.currentWidget() is self.hardware else self.search
+        search.setFocus()
+
     def edit(self, ticket: Ticket | None = None) -> None:
         """Open the editor and select its result."""
+        self.sections.setCurrentIndex(0)
         editor = TicketEditor(self.service, ticket, self)
         if editor.exec() == QDialog.DialogCode.Accepted and editor.result_ticket:
             self.refresh(editor.result_ticket.number)
@@ -352,6 +366,7 @@ class MainWindow(QMainWindow):
     def settings(self) -> None:
         from app.ui.settings import Settings
         Settings(self.service, self.archive, self).exec()
+        self.hardware.refresh()
         self.dark = self.service.repo.setting("theme") == "dark"
         self.theme.setText("Light mode" if self.dark else "Dark mode")
         apply_theme(QApplication.instance(), self.dark)

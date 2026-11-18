@@ -9,6 +9,7 @@ An offline Windows 11 desktop application for logging IT support tickets and the
 - Timestamped progress notes and automatic status and priority history
 - Requester autocomplete, related tickets, and follow-up dates
 - Excel and CSV export, monthly summaries, and automatic JSON backups
+- Searchable hardware catalog with power cable, ink and toner details, and offline manuals
 - Light and dark themes and optional fictional sample tickets
 
 ## Screenshots
@@ -36,6 +37,15 @@ Use **Ctrl+N** for a new ticket, **Ctrl+F** for search, **Ctrl+Enter** to save t
 3. Open the executable directly. The destination machine does not need Python.
 
 The first installation and packaging step downloads dependencies. The application runs offline after installation.
+
+## Hardware and manuals
+
+Open **Hardware** and select **Add Hardware** to record a device type, make, model,
+power cable or adapter, and ink or toner. Select a record to attach PDF, DOCX, or TXT manuals
+up to 25 MB per file. The app stores its own copy. Use **Save a copy** to retrieve a manual.
+
+Version 1.1 backups contain hardware and manuals. Restoring a version 1.0 backup replaces
+ticket data and settings while preserving the hardware catalog.
 
 ## Local data and reports
 

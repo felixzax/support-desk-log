@@ -2,7 +2,7 @@ from dataclasses import replace
 
 import pytest
 
-from app.data.database import connect
+from app.data.database import MIGRATIONS, connect
 from app.data.repository import Repository
 from app.models.ticket import Ticket
 from app.services.tickets import Tickets
@@ -25,7 +25,7 @@ def test_numbering_survives_delete_and_restart(service, tmp_path):
     db = connect(tmp_path / "test.sqlite")
     try:
         assert Tickets(Repository(db)).save(draft).number == 13
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert db.execute("PRAGMA user_version").fetchone()[0] == len(MIGRATIONS)
     finally:
         db.close()
 

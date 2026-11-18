@@ -1,12 +1,17 @@
 """Versioned JSON backups with atomic replacement and bounded retention."""
+import base64
 import json
 import os
 import tempfile
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
+from app.data.hardware import HardwareRepository
 from app.data.repository import Repository
+from app.models.hardware import Hardware
 from app.models.ticket import Ticket
+from app.services.hardware import validate_hardware, validate_manual
 from app.services.tickets import validate
 
 
@@ -16,13 +21,19 @@ class Archive:
     def __init__(self, repo: Repository, directory: Path) -> None:
         self.repo = repo
         self.directory = directory
+        self.hardware = HardwareRepository(repo)
 
     def backup(self) -> Path:
         """Write a snapshot and keep the latest ten successful files."""
         with self.repo.transaction(write=False):
             tickets = self.repo.tickets()
             state = {
-                "version": 1,
+                "version": 2,
+                "hardware": [asdict(item) for item in self.hardware.items()],
+                "manuals": [
+                    dict(document, content=base64.b64encode(document["content"]).decode("ascii"))
+                    for document in self.hardware.documents()
+                ],
                 "tickets": [dict(ticket.payload(), number=ticket.number) for ticket in tickets],
                 "entries": [entry for ticket in tickets for entry in self.repo.entries(ticket.number)],
                 "settings": dict(self.repo.db.execute("SELECT key, value FROM settings")),
@@ -52,8 +63,25 @@ class Archive:
         """Validate the snapshot before replacing records in a single transaction."""
         try:
             state = json.loads(path.read_text(encoding="utf-8"))
-            if state["version"] != 1:
+            if state["version"] not in (1, 2):
                 raise ValueError("Unsupported backup version.")
+            hardware = []
+            manuals = []
+            if state["version"] == 2:
+                hardware = [validate_hardware(Hardware(**record)) for record in state["hardware"]]
+                identifiers = {item.id for item in hardware}
+                if len(identifiers) != len(hardware) or any(
+                    type(identifier) is not int or not 0 < identifier < 2**63
+                    for identifier in identifiers
+                ):
+                    raise ValueError("Invalid hardware identifiers.")
+                for document in state["manuals"]:
+                    identifier, name = document["hardware_id"], document["name"]
+                    if type(identifier) is not int or identifier not in identifiers:
+                        raise ValueError("A manual references missing hardware.")
+                    content = base64.b64decode(document["content"], validate=True)
+                    validate_manual(name, content)
+                    manuals.append((identifier, name, content))
             tickets = [Ticket(**record) for record in state["tickets"]]
             numbers = {ticket.number for ticket in tickets}
             if len(numbers) != len(tickets) or any(type(n) is not int or n < 1 for n in numbers):
@@ -91,3 +119,12 @@ class Archive:
                 self.repo.write(ticket)
             for entry in entries:
                 self.repo.add_entry(entry["ticket"], entry["timestamp"], entry["kind"], entry["body"])
+            if state["version"] == 2:
+                self.repo.db.execute("DELETE FROM hardware")
+                self.repo.db.executemany(
+                    "INSERT INTO hardware(id, kind, make, model, power, ink) VALUES (?, ?, ?, ?, ?, ?)",
+                    [(item.id, item.kind, item.make, item.model, item.power, item.ink)
+                     for item in hardware],
+                )
+                for identifier, name, content in manuals:
+                    self.hardware.add_manual(identifier, name, content)

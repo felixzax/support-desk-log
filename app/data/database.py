@@ -14,6 +14,17 @@ MIGRATIONS = (
         )""",
         "CREATE INDEX entries_ticket ON entries(ticket, id)",
     ),
+    (
+        """CREATE TABLE hardware (
+            id INTEGER PRIMARY KEY, kind TEXT NOT NULL, make TEXT NOT NULL,
+            model TEXT NOT NULL, power TEXT NOT NULL, ink TEXT NOT NULL
+        )""",
+        """CREATE TABLE manuals (
+            id INTEGER PRIMARY KEY, hardware_id INTEGER NOT NULL REFERENCES hardware(id)
+            ON DELETE CASCADE, name TEXT NOT NULL, content BLOB NOT NULL
+        )""",
+        "CREATE INDEX manuals_hardware ON manuals(hardware_id)",
+    ),
 )
 
 
