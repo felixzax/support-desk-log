@@ -217,7 +217,8 @@ class MainWindow(QMainWindow):
         layout.addLayout(buttons)
         details = [f"{ticket.category} · Opened {ticket.opened}"]
         for caption, value in (
-            ("Device / software", ticket.device), ("Resolved", ticket.resolved),
+            ("Device / software", ticket.device), ("Operating system", ticket.operating_system),
+            ("Resolved", ticket.resolved),
             ("Follow-up", ticket.follow_up), ("Minutes spent", ticket.minutes),
             ("Email", ticket.email), ("Phone", ticket.phone), ("Email thread link", ticket.thread),
         ):

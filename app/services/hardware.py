@@ -11,7 +11,7 @@ MANUAL_SUFFIXES = {".pdf", ".docx", ".txt"}
 
 def validate_hardware(item: Hardware) -> Hardware:
     """Normalize fields and require a type, make, and model."""
-    values = {key: getattr(item, key) for key in ("kind", "make", "model", "power", "ink")}
+    values = {key: getattr(item, key) for key in ("kind", "make", "model", "power", "ink", "location")}
     if any(not isinstance(value, str) for value in values.values()):
         raise ValueError("Hardware fields must contain text.")
     values = {key: value.strip() for key, value in values.items()}
@@ -38,10 +38,13 @@ class Catalog:
     def search(self, text: str) -> list[Hardware]:
         """Find models by type, make, model, cable, or cartridge."""
         terms = text.casefold().split()
-        return [item for item in self.storage.items() if all(
-            term in " ".join((item.kind, item.make, item.model, item.power, item.ink)).casefold()
-            for term in terms
-        )]
+        results = []
+        for item in self.storage.items():
+            fields = (item.kind, item.make, item.model, item.power, item.ink, item.location)
+            haystack = " ".join(fields).casefold()
+            if all(term in haystack for term in terms):
+                results.append(item)
+        return results
 
     def save(self, item: Hardware) -> int:
         """Save a valid catalog record."""

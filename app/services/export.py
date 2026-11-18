@@ -10,7 +10,8 @@ from openpyxl import Workbook
 from app.models.ticket import Ticket
 
 HEADERS = ("Ticket number", "Title", "Requester", "Job title", "Department", "Category",
-           "Device / software", "Priority", "Status", "Date opened", "Date resolved", "Minutes spent")
+           "Device / software", "Priority", "Status", "Date opened", "Date resolved", "Minutes spent",
+           "Operating system")
 
 
 def export(tickets: list[Ticket], path: Path, start: date | None = None,
@@ -25,7 +26,7 @@ def export(tickets: list[Ticket], path: Path, start: date | None = None,
             continue
         rows.append((ticket.number, ticket.title, ticket.requester, ticket.job, ticket.department,
                      ticket.category, ticket.device, ticket.priority, ticket.status, ticket.opened,
-                     ticket.resolved, ticket.minutes))
+                     ticket.resolved, ticket.minutes, ticket.operating_system))
     if path.suffix.lower() == ".xlsx":
         workbook = Workbook()
         sheet = workbook.active

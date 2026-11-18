@@ -122,8 +122,9 @@ class Archive:
             if state["version"] == 2:
                 self.repo.db.execute("DELETE FROM hardware")
                 self.repo.db.executemany(
-                    "INSERT INTO hardware(id, kind, make, model, power, ink) VALUES (?, ?, ?, ?, ?, ?)",
-                    [(item.id, item.kind, item.make, item.model, item.power, item.ink)
+                    "INSERT INTO hardware(id, kind, make, model, power, ink, location) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [(item.id, item.kind, item.make, item.model, item.power, item.ink, item.location)
                      for item in hardware],
                 )
                 for identifier, name, content in manuals:

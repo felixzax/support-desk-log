@@ -12,3 +12,4 @@ class Hardware:
     power: str = ""
     ink: str = ""
     id: int | None = None
+    location: str = ""

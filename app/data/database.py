@@ -25,6 +25,7 @@ MIGRATIONS = (
         )""",
         "CREATE INDEX manuals_hardware ON manuals(hardware_id)",
     ),
+    ("ALTER TABLE hardware ADD COLUMN location TEXT NOT NULL DEFAULT ''",),
 )
 
 

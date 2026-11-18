@@ -46,6 +46,7 @@ class Ticket:
     department: str = ""
     updated: str = ""
     sample: bool = False
+    operating_system: str = ""
 
     @property
     def subject(self) -> str:

@@ -19,13 +19,14 @@ def test_search_spans_past_and_manual_notes(tmp_path):
         service = Tickets(repo)
         service.save(Ticket("Another issue", "Other requester", "2026-01-12"))
         past = service.save(Ticket("Display issue", "Example User", "2026-01-10",
-                                   status="In Progress", department="Accounts", job="Advisor"))
+                                   status="In Progress", department="Accounts", job="Advisor",
+                                   operating_system="Windows 11 24H2"))
         past.status = "Resolved"
         past.resolution = "Replaced adapter"
         past.resolved = "2026-01-11"
         service.save(past)
         service.note(past.number, "Confirmed working")
-        assert [t.number for t in browse(repo, repo.tickets(), query="advisor confirmed")] == [past.number]
+        assert [t.number for t in browse(repo, repo.tickets(), query="advisor confirmed 24h2")] == [past.number]
         assert [t.number for t in browse(repo, repo.tickets(), requester="example user")] == [past.number]
         assert past.number not in [t.number for t in browse(repo, repo.tickets())]
     finally:
@@ -33,7 +34,7 @@ def test_search_spans_past_and_manual_notes(tmp_path):
 
 
 def test_export_preserves_formats_and_dates(tmp_path):
-    tickets = [Ticket("=example", "Test User", "2026-01-15", number=1, minutes=42),
+    tickets = [Ticket("=example", "Test User", "2026-01-15", number=1, minutes=42, operating_system="macOS 15"),
                Ticket("Past issue", "Test User", "2025-12-01", number=2)]
     start = end = date(2026, 1, 15)
     csv_path, xlsx_path = tmp_path / "tickets.csv", tmp_path / "tickets.xlsx"
@@ -43,9 +44,11 @@ def test_export_preserves_formats_and_dates(tmp_path):
         row, = csv.DictReader(handle)
         assert row["Title"] == "'=example"
         assert row["Minutes spent"] == "42"
+        assert row["Operating system"] == "macOS 15"
     workbook = load_workbook(xlsx_path)
     assert workbook.active["B2"].data_type == "s"
     assert workbook.active["L2"].value == 42
+    assert workbook.active["M2"].value == "macOS 15"
     workbook.close()
     assert "Tickets opened · 1" in monthly(tickets, start)
 

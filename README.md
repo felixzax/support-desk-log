@@ -4,7 +4,7 @@ An offline Windows 11 desktop application for logging IT support tickets and the
 
 ## Features
 
-- Sequential ticket numbers and copyable email subject lines
+- Sequential ticket numbers, copyable email subject lines, and an optional operating system field
 - Current, past, and all-ticket views with priority filters, requester history, and full-text search
 - Timestamped progress notes and automatic status and priority history
 - Requester autocomplete, related tickets, and follow-up dates
@@ -41,7 +41,7 @@ The first installation and packaging step downloads dependencies. The applicatio
 ## Hardware and manuals
 
 Open **Hardware** and select **Add Hardware** to record a device type, make, model,
-power cable or adapter, and ink or toner. Select a record to attach PDF, DOCX, or TXT manuals
+location, power cable or adapter, and ink or toner. Select a record to attach PDF, DOCX, or TXT manuals
 up to 25 MB per file. The app stores its own copy. Use **Save a copy** to retrieve a manual.
 
 Version 1.1 backups contain hardware and manuals. Restoring a version 1.0 backup replaces

@@ -29,7 +29,7 @@ class HardwarePage(QWidget):
         layout.setContentsMargins(16, 12, 16, 12)
         bar = QHBoxLayout()
         self.query = QLineEdit()
-        self.query.setPlaceholderText("Search make, model, power cable, or ink")
+        self.query.setPlaceholderText("Search hardware by make, model, location, cable, or ink")
         self.query.setAccessibleName("Search hardware")
         self.query.setClearButtonEnabled(True)
         bar.addWidget(self.query, 1)
@@ -37,8 +37,8 @@ class HardwarePage(QWidget):
         layout.addLayout(bar)
         self.records = QTreeWidget()
         self.records.setRootIsDecorated(False)
-        self.records.setHeaderLabels(("Type", "Make", "Model", "Power cable / adapter", "Ink / toner"))
-        for column, width in enumerate((140, 155, 185, 230)):
+        self.records.setHeaderLabels(("Type", "Make", "Model", "Location", "Power cable / adapter", "Ink / toner"))
+        for column, width in enumerate((115, 120, 150, 180, 170)):
             self.records.setColumnWidth(column, width)
         layout.addWidget(self.records, 3)
         self.summary = plain("", "muted")
@@ -83,7 +83,9 @@ class HardwarePage(QWidget):
         results = self.catalog.search(self.query.text())
         self.items = {item.id: item for item in results}
         for item in results:
-            row = QTreeWidgetItem(self.records, (item.kind, item.make, item.model, item.power, item.ink))
+            row = QTreeWidgetItem(self.records, (
+                item.kind, item.make, item.model, item.location, item.power, item.ink,
+            ))
             row.setData(0, ROLE, item.id)
             if item.id == identifier:
                 self.records.setCurrentItem(row)
@@ -139,11 +141,13 @@ class HardwarePage(QWidget):
         form.addRow("Device type", kind)
         make = QLineEdit(draft.make)
         model = QLineEdit(draft.model)
+        location = QLineEdit(draft.location)
+        location.setPlaceholderText("e.g. Building A, Room 204")
         power = QLineEdit(draft.power)
         power.setPlaceholderText("e.g. IEC C13 or 65 W USB-C")
         ink = QLineEdit(draft.ink)
         ink.setPlaceholderText("Cartridge or toner number, if applicable")
-        for label, field in (("Make", make), ("Model", model),
+        for label, field in (("Make", make), ("Model", model), ("Location", location),
                              ("Power cable / adapter", power), ("Ink / toner", ink)):
             form.addRow(label, field)
         buttons = QDialogButtonBox(
@@ -154,7 +158,8 @@ class HardwarePage(QWidget):
         def submit() -> None:
             try:
                 identifier = self.catalog.save(Hardware(
-                    kind.currentText(), make.text(), model.text(), power.text(), ink.text(), draft.id
+                    kind.currentText(), make.text(), model.text(), power.text(), ink.text(),
+                    id=draft.id, location=location.text(),
                 ))
             except (ValueError, DatabaseError) as error:
                 self.warn(error)

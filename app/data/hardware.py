@@ -19,14 +19,15 @@ class HardwareRepository:
 
     def save(self, item: Hardware) -> int:
         """Insert or update a model and return its identifier."""
-        fields = (item.kind, item.make, item.model, item.power, item.ink)
+        fields = (item.kind, item.make, item.model, item.power, item.ink, item.location)
         if item.id is None:
             result = self.repo.db.execute(
-                "INSERT INTO hardware(kind, make, model, power, ink) VALUES (?, ?, ?, ?, ?)", fields
+                "INSERT INTO hardware(kind, make, model, power, ink, location) VALUES (?, ?, ?, ?, ?, ?)",
+                fields,
             )
             return result.lastrowid
         result = self.repo.db.execute(
-            "UPDATE hardware SET kind=?, make=?, model=?, power=?, ink=? WHERE id=?",
+            "UPDATE hardware SET kind=?, make=?, model=?, power=?, ink=?, location=? WHERE id=?",
             (*fields, item.id),
         )
         if not result.rowcount:

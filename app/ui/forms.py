@@ -69,6 +69,11 @@ class TicketEditor(QDialog):
         self.category.setCurrentText(self.draft.category)
         form.addRow("Category", self.category)
         self.line(form, "device", "Device / software", "Office laser printer")
+        os_field = self.line(form, "operating_system", "Operating system", "e.g. Windows 11 24H2")
+        os_options = QCompleter(("Windows 11", "Windows 10", "Windows Server", "macOS", "Linux",
+                                 "ChromeOS", "iOS", "Android"), os_field)
+        os_options.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        os_field.setCompleter(os_options)
         self.priority = priority_box()
         self.priority.setCurrentText(self.draft.priority)
         form.addRow("Priority", self.priority)

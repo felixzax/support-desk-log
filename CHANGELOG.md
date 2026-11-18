@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.0
+
+- Added a searchable location field to hardware records.
+- Added an optional operating system field to tickets, with suggestions, search, and export support.
+
 ## v1.1.0
 
 - Added a searchable hardware catalog with device type, make, model, power cable or adapter, and ink or toner.

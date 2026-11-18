@@ -48,7 +48,9 @@ def test_manual_attachment_survives_source_removal_and_restore(tmp_path):
         repo = Repository(db)
         storage = HardwareRepository(repo)
         catalog = Catalog(storage)
-        printer = catalog.save(Hardware("Printer", "Test make", "Test model", "IEC C13", "T-123"))
+        printer = catalog.save(Hardware(
+            "Printer", "Test make", "Test model", "IEC C13", "T-123", location=" Room 204 "
+        ))
         file = tmp_path / "guide.txt"
         content = b"Example printer instructions."
         file.write_bytes(content)
@@ -59,7 +61,9 @@ def test_manual_attachment_survives_source_removal_and_restore(tmp_path):
         storage.delete(printer)
         assert storage.manuals(printer) == []
         archive.restore(snapshot)
-        assert catalog.search("t-123")[0].id == printer
+        restored = catalog.search("t-123 room 204")[0]
+        assert restored.id == printer
+        assert restored.location == "Room 204"
         manual, name, size = storage.manuals(printer)[0]
         assert (name, size) == ("guide.txt", len(content))
         catalog.save_copy(printer, manual, file)

@@ -4,7 +4,7 @@ from datetime import date, timedelta
 from app.data.repository import Repository
 from app.models.ticket import CURRENT, PRIORITIES, Ticket
 
-SEARCH_FIELDS = ("title", "requester", "job", "department", "summary", "resolution")
+SEARCH_FIELDS = ("title", "requester", "job", "department", "summary", "resolution", "operating_system")
 
 
 def browse(repo: Repository, tickets: list[Ticket], *, tab: str = "CURRENT", query: str = "",
