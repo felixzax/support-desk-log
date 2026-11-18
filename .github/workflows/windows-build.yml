@@ -1,0 +1,53 @@
+name: Build Windows executable
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/support-desk-log-v1
+    paths:
+      - .github/workflows/windows-build.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Run tests and package
+        shell: cmd
+        run: |
+          python -m venv .venv
+          call build.bat
+      - name: Smoke test the executable
+        shell: pwsh
+        run: |
+          $env:APPDATA = Join-Path $env:RUNNER_TEMP "support-desk-smoke"
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $exe = (Resolve-Path "dist/Support Desk Log.exe").Path
+          $process = Start-Process -FilePath $exe -PassThru
+          try {
+            $database = Join-Path $env:APPDATA "Support Desk Log/tickets.sqlite3"
+            $deadline = (Get-Date).AddSeconds(45)
+            while (!(Test-Path $database) -and (Get-Date) -lt $deadline -and !$process.HasExited) {
+              Start-Sleep -Milliseconds 500
+            }
+            if (!(Test-Path $database) -or $process.HasExited) {
+              throw "The packaged application failed to start."
+            }
+          } finally {
+            if (!$process.HasExited) {
+              taskkill /PID $process.Id /T /F
+            }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Support-Desk-Log-Windows-x64
+          path: dist/Support Desk Log.exe
+          if-no-files-found: error
