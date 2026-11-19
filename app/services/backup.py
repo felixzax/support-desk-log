@@ -25,6 +25,21 @@ class Archive:
 
     def backup(self) -> Path:
         """Write a snapshot and keep the latest ten successful files."""
+        path = self.directory / self.suggested_name()
+        self.export(path)
+        for old in sorted(self.directory.glob("support-desk-*.json"), reverse=True)[10:]:
+            old.unlink(missing_ok=True)
+        return path
+
+    @staticmethod
+    def suggested_name() -> str:
+        """Return a timestamped file name for automatic and portable backups."""
+        return f"support-desk-{datetime.now():%Y%m%d-%H%M%S-%f}.json"
+
+    def export(self, path: Path) -> Path:
+        """Save a portable backup at the chosen path without applying retention."""
+        if path.suffix.lower() != ".json":
+            raise ValueError("Choose a .json filename for the backup.")
         with self.repo.transaction(write=False):
             tickets = self.repo.tickets()
             state = {
@@ -38,25 +53,20 @@ class Archive:
                 "entries": [entry for ticket in tickets for entry in self.repo.entries(ticket.number)],
                 "settings": dict(self.repo.db.execute("SELECT key, value FROM settings")),
             }
-        self.directory.mkdir(parents=True, exist_ok=True)
-        path = self.directory / f"support-desk-{datetime.now():%Y%m%d-%H%M%S-%f}.json"
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=self.directory,
-                                         delete=False) as handle:
-            temporary = Path(handle.name)
-            try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=path.parent, delete=False
+            ) as handle:
+                temporary = Path(handle.name)
                 json.dump(state, handle, ensure_ascii=False, indent=2)
                 handle.flush()
                 os.fsync(handle.fileno())
-            except Exception:
-                handle.close()
-                temporary.unlink(missing_ok=True)
-                raise
-        try:
             temporary.replace(path)
         finally:
-            temporary.unlink(missing_ok=True)
-        for old in sorted(self.directory.glob("support-desk-*.json"), reverse=True)[10:]:
-            old.unlink(missing_ok=True)
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
         return path
 
     def restore(self, path: Path) -> None:

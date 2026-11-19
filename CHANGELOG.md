@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.0
+
+- Added portable backup export and import for moving tickets, hardware, and manuals between computers.
+
 ## v1.2.0
 
 - Added a searchable location field to hardware records.

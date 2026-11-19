@@ -47,6 +47,16 @@ up to 25 MB per file. The app stores its own copy. Use **Save a copy** to retrie
 Version 1.1 backups contain hardware and manuals. Restoring a version 1.0 backup replaces
 ticket data and settings while preserving the hardware catalog.
 
+## Move to a new computer
+
+1. On the original computer, open **Settings → Backup → Export backup** and save the JSON file.
+2. Copy that file to the new computer using a USB drive or another transfer method.
+3. Open Support Desk Log on the new computer and choose **Settings → Backup → Import backup**.
+   Select the copied file and confirm.
+
+The backup includes tickets, progress logs, settings, hardware, and attached manuals.
+Import replaces the local data covered by the backup and saves a copy of the current data first.
+
 ## Local data and reports
 
 SQLite data lives in `%APPDATA%\Support Desk Log\tickets.sqlite3`. JSON copies are kept in the adjacent `backups` folder. Settings includes manual backup and restore. Restore replaces local records and makes a backup of the current data first. The next ticket number stays at or above the counter already reached.

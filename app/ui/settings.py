@@ -4,6 +4,7 @@ from datetime import date
 from pathlib import Path
 from sqlite3 import Error as DatabaseError
 
+from PySide6.QtCore import QStandardPaths
 from PySide6.QtWidgets import (
     QApplication, QDialog, QFileDialog, QFormLayout, QLabel, QLineEdit, QMessageBox,
     QSpinBox, QTabWidget, QVBoxLayout, QWidget,
@@ -47,7 +48,12 @@ class Settings(QDialog):
         backup_layout.addWidget(plain("A JSON backup is saved on close. The latest 10 are kept."))
         backup_layout.addWidget(plain(str(archive.directory), "muted"))
         backup_layout.addWidget(action("Backup now", self.backup))
-        backup_layout.addWidget(action("Restore from backup", self.restore))
+        backup_layout.addWidget(plain(
+            "To move to a new computer, export a backup here, copy the file, "
+            "then import it on the new computer."
+        ))
+        backup_layout.addWidget(action("Export backup…", self.export_backup))
+        backup_layout.addWidget(action("Import backup…", self.restore))
         backup_layout.addStretch()
         tabs.addTab(backups, "Backup")
 
@@ -101,18 +107,35 @@ class Settings(QDialog):
     def backup(self) -> None:
         self.run(self.archive.backup, "Backup saved to\n{}")
 
+    def export_backup(self) -> None:
+        """Save a full backup to a folder or removable drive chosen by the user."""
+        documents = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DocumentsLocation)
+        suggested = Path(documents) / self.archive.suggested_name()
+        selected, _ = QFileDialog.getSaveFileName(
+            self, "Export backup", str(suggested), "Support Desk Log backup (*.json)"
+        )
+        if selected:
+            path = Path(selected)
+            if not path.suffix:
+                path = path.with_suffix(".json")
+            self.run(lambda: self.archive.export(path), "Backup exported to\n{}")
+
     def restore(self) -> None:
-        selected, _ = QFileDialog.getOpenFileName(self, "Restore from backup",
-                                                   str(self.archive.directory), "JSON backups (*.json)")
+        """Import either a portable or an automatic backup."""
+        selected, _ = QFileDialog.getOpenFileName(
+            self, "Import backup", str(self.archive.directory), "Support Desk Log backup (*.json)"
+        )
         if selected and QMessageBox.question(
-            self, "Replace local data", "Restore this backup? It replaces the data it contains, including hardware and manuals if present. A copy of the current data will be saved first.",
+            self, "Import backup",
+            "Import this backup? It replaces the local data it contains. A backup of the "
+            "current data will be saved first.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No,
         ) == QMessageBox.StandardButton.Yes:
             def restore_archive() -> None:
                 self.archive.restore(Path(selected))
                 self.accept()
 
-            self.run(restore_archive, "Backup restored.")
+            self.run(restore_archive, "Backup imported.")
 
     def export(self) -> None:
         selected, file_type = QFileDialog.getSaveFileName(

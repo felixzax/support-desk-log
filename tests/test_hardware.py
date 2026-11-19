@@ -72,3 +72,43 @@ def test_manual_attachment_survives_source_removal_and_restore(tmp_path):
         assert service.save(Ticket("Ticket after restore", "Test requester", "2026-01-15")).number == 1
     finally:
         db.close()
+
+
+def test_portable_backup_restores_on_another_computer(tmp_path):
+    source_db = connect(tmp_path / "old-computer" / "tickets.sqlite3")
+    target_db = connect(tmp_path / "new-computer" / "tickets.sqlite3")
+    try:
+        source = Repository(source_db)
+        target = Repository(target_db)
+        source_tickets = Tickets(source)
+        ticket = source_tickets.save(Ticket(
+            "Print driver", "Test requester", "2026-01-15", operating_system="Windows 11"
+        ))
+        source_tickets.note(ticket.number, "Installed driver")
+        hardware = Catalog(HardwareRepository(source))
+        printer = hardware.save(Hardware("Printer", "Test", "P100", location="Room 204"))
+        manual = tmp_path / "guide.txt"
+        manual.write_bytes(b"Printer guide")
+        hardware.attach(printer, manual)
+        manual.unlink()
+
+        source_archive = Archive(source, tmp_path / "old-computer" / "backups")
+        portable = tmp_path / "usb-drive" / "transfer.json"
+        assert source_archive.export(portable) == portable
+        assert not source_archive.directory.exists()
+
+        target_tickets = Tickets(target)
+        target_tickets.save(Ticket("Earlier local ticket", "Test requester", "2026-01-15"))
+        target_archive = Archive(target, tmp_path / "new-computer" / "backups")
+        target_archive.restore(portable)
+        assert target.get(ticket.number).operating_system == "Windows 11"
+        assert target.entries(ticket.number)[-1]["body"] == "Installed driver"
+        target_hardware = HardwareRepository(target)
+        assert target_hardware.items()[0].location == "Room 204"
+        manual_id, _, _ = target_hardware.manuals(printer)[0]
+        assert target_hardware.read_manual(printer, manual_id) == b"Printer guide"
+        previous, = target_archive.directory.glob("*.json")
+        assert json.loads(previous.read_text(encoding="utf-8"))["tickets"][0]["title"] == "Earlier local ticket"
+    finally:
+        source_db.close()
+        target_db.close()
